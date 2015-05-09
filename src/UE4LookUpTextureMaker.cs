@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace make_precalc_textures
+namespace UE4IBLLookUpTextureGen
 {
     /// <summary>
     /// UE4 の IBL に用いる Look-up テクスチャを生成する静的クラス。

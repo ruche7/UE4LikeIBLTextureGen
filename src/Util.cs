@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Media.Media3D;
 
-namespace make_precalc_textures
+namespace UE4IBLLookUpTextureGen
 {
     /// <summary>
     /// 便利処理をまとめた静的クラス。

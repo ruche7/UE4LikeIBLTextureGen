@@ -2,7 +2,7 @@
 using System.IO;
 using System.Windows.Media.Imaging;
 
-namespace make_precalc_textures
+namespace UE4IBLLookUpTextureGen
 {
     /// <summary>
     /// プログラムのメインクラス。

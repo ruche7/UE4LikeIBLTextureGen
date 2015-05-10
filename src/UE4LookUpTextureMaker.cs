@@ -15,7 +15,7 @@ namespace UE4IBLLookUpTextureGen
     internal static class UE4LookUpTextureMaker
     {
         /// <summary>
-        /// Look-up テクスチャイメージを生成する。
+        /// テクスチャイメージを生成する。
         /// </summary>
         /// <param name="nvDotWidth">
         /// 法線ベクトルと視点ベクトルとの内積値をアサインするイメージ横幅。
@@ -67,7 +67,7 @@ namespace UE4IBLLookUpTextureGen
                     PixelFormats.Bgra32,
                     null);
             bmp.WritePixels(
-                new Int32Rect(0, 0, nvDotWidth, roughnessHeight),
+                new Int32Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight),
                 pixels,
                 nvDotWidth * bpp,
                 0);
@@ -76,7 +76,7 @@ namespace UE4IBLLookUpTextureGen
         }
 
         /// <summary>
-        /// Look-up テクスチャイメージを生成する。
+        /// テクスチャイメージを生成する。
         /// </summary>
         /// <param name="widthAndHeight">
         /// イメージの縦横幅。 1 以上かつ 2 の累乗値。

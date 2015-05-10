@@ -15,12 +15,31 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
-            // LUT イメージ作成
-            var bmp = UE4LookUpTextureMaker.Make(256, 1024);
+            int lutSize = 256;
+            int hammersleySampleCount = 1024;
 
-            // ファイルパス決定
-            var filePath = (args.Length > 0) ? args[0] : "lut.png";
+            // LUT イメージ保存
+            Console.WriteLine("Making LUT ...");
+            SaveTexture(
+                UE4LookUpTextureMaker.Make(lutSize, hammersleySampleCount),
+                (args.Length < 1) ? "lut.png" : args[0]);
 
+            // Hammersley Y座標イメージ保存
+            Console.WriteLine("Making Y of Hammersley points ...");
+            SaveTexture(
+                HammersleyYTextureMaker.Make(hammersleySampleCount),
+                (args.Length < 2) ? "hammersley_y.png" : args[1]);
+
+            return 0;
+        }
+
+        /// <summary>
+        /// テクスチャイメージを画像ファイルに保存する。
+        /// </summary>
+        /// <param name="bmp">テクスチャイメージ。</param>
+        /// <param name="filePath">画像ファイルパス。拡張子で形式が決まる。</param>
+        private static void SaveTexture(BitmapSource bmp, string filePath)
+        {
             // ファイルパスに応じてエンコーダ選択
             BitmapEncoder enc = null;
             switch (Path.GetExtension(filePath).ToLower())
@@ -49,8 +68,8 @@ namespace UE4IBLLookUpTextureGen
                 break;
 
             default:
-                filePath += ".bmp";
-                enc = new BmpBitmapEncoder();
+                filePath += ".png";
+                enc = new PngBitmapEncoder();
                 break;
             }
 
@@ -62,8 +81,6 @@ namespace UE4IBLLookUpTextureGen
             {
                 enc.Save(s);
             }
-
-            return 0;
         }
     }
 }

@@ -62,8 +62,8 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="nvDot">
         /// 法線ベクトルと視点ベクトルとの内積値。 0.0 以上 1.0 以下。
         /// </param>
-        /// <param name="hammerslaySampleCount">
-        /// Hammerslay 座標の総サンプリング数。 1 以上。
+        /// <param name="hammersleySampleCount">
+        /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
         /// <returns>環境BRDF値。</returns>
         /// <remarks>
@@ -73,11 +73,11 @@ namespace UE4IBLLookUpTextureGen
         public static Vector IntegrateBRDF(
             double roughness,
             double nvDot,
-            int hammerslaySampleCount)
+            int hammersleySampleCount)
         {
             ValidateRange(roughness, 0.0, 1.0, "roughness");
             ValidateRange(nvDot, 0.0, 1.0, "nvDot");
-            ValidateRange(hammerslaySampleCount, 1, int.MaxValue, "hammerslaySampleCount");
+            ValidateRange(hammersleySampleCount, 1, int.MaxValue, "hammersleySampleCount");
 
             var result = new Vector();
 
@@ -89,9 +89,9 @@ namespace UE4IBLLookUpTextureGen
             var v = new Vector3D(Math.Sqrt(1 - nvDot * nvDot), 0, nvDot);
             var normal = new Vector3D(0, 0, 1);
 
-            for (int hi = 0; hi < hammerslaySampleCount; ++hi)
+            for (int hi = 0; hi < hammersleySampleCount; ++hi)
             {
-                var xi = Hammerslay(hi, hammerslaySampleCount);
+                var xi = Hammersley(hi, hammersleySampleCount);
                 var h = ImportanceSampleGGX(xi, roughness, normal);
 
                 var vhDot = Vector3D.DotProduct(v, h);
@@ -112,7 +112,7 @@ namespace UE4IBLLookUpTextureGen
                 }
             }
 
-            return (result / hammerslaySampleCount);
+            return (result / hammersleySampleCount);
         }
 
         /// <summary>
@@ -148,18 +148,18 @@ namespace UE4IBLLookUpTextureGen
         }
 
         /// <summary>
-        /// Hammerslay 座標値を求める。
+        /// Hammersley 座標値を求める。
         /// </summary>
         /// <param name="index">
         /// サンプリングインデックス。 0 以上 sampleCount 未満。
         /// </param>
         /// <param name="sampleCount">総サンプリング数。 1 以上。</param>
-        /// <returns>Hammerslay 座標値。</returns>
+        /// <returns>Hammersley 座標値。</returns>
         /// <remarks>
         /// 参考文献: Hammersley Points on the Hemisphere
         /// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
         /// </remarks>
-        public static Vector Hammerslay(int index, int sampleCount)
+        public static Vector Hammersley(int index, int sampleCount)
         {
             ValidateRange(sampleCount, 1, int.MaxValue, "sampleCount");
             ValidateRange(index, 0, sampleCount - 1, "index");

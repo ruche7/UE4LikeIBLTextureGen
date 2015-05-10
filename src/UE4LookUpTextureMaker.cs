@@ -24,19 +24,19 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="roughnessHeight">
         /// ラフネス値をアサインするイメージ縦幅。 1 以上かつ 2 の累乗値。
         /// </param>
-        /// <param name="hammerslaySampleCount">
-        /// Hammerslay 座標の総サンプリング数。 1 以上。
+        /// <param name="hammersleySampleCount">
+        /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
         /// <returns>生成されたテクスチャイメージ。</returns>
         public static BitmapSource Make(
             int nvDotWidth,
             int roughnessHeight,
-            int hammerslaySampleCount)
+            int hammersleySampleCount)
         {
             ValidateWidthOrHeight(nvDotWidth, "nvDotWidth");
             ValidateWidthOrHeight(roughnessHeight, "roughnessHeight");
             Util.ValidateRange(
-                hammerslaySampleCount, 1, int.MaxValue, "hammerslaySampleCount");
+                hammersleySampleCount, 1, int.MaxValue, "hammersleySampleCount");
 
             // BGRA ピクセル配列作成
             int bpp = 4;
@@ -47,7 +47,7 @@ namespace UE4IBLLookUpTextureGen
                 for (int x = 0; x < nvDotWidth; ++x)
                 {
                     var nvDot = (x + 0.5) / nvDotWidth;
-                    var lut = Util.IntegrateBRDF(roughness, nvDot, hammerslaySampleCount);
+                    var lut = Util.IntegrateBRDF(roughness, nvDot, hammersleySampleCount);
 
                     var pos = (y * nvDotWidth + x) * bpp;
                     pixels[pos + 0] = 0; // B
@@ -81,15 +81,15 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="widthAndHeight">
         /// イメージの縦横幅。 1 以上かつ 2 の累乗値。
         /// </param>
-        /// <param name="hammerslaySampleCount">
-        /// Hammerslay 座標の総サンプリング数。 1 以上。
+        /// <param name="hammersleySampleCount">
+        /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
         /// <returns>生成されたテクスチャイメージ。</returns>
-        public static BitmapSource Make(int widthAndHeight, int hammerslaySampleCount)
+        public static BitmapSource Make(int widthAndHeight, int hammersleySampleCount)
         {
             ValidateWidthOrHeight(widthAndHeight, "widthAndHeight");
 
-            return Make(widthAndHeight, widthAndHeight, hammerslaySampleCount);
+            return Make(widthAndHeight, widthAndHeight, hammersleySampleCount);
         }
 
         /// <summary>

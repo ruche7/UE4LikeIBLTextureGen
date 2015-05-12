@@ -38,9 +38,9 @@ namespace UE4IBLLookUpTextureGen
             Util.ValidateRange(
                 hammersleySampleCount, 1, int.MaxValue, "hammersleySampleCount");
 
-            // BGRA ピクセル配列作成
-            int bpp = 4;
-            var pixels = new byte[nvDotWidth * bpp * roughnessHeight];
+            // 16ビットRGBピクセル配列作成
+            var ch = 3;
+            var pixels = new ushort[nvDotWidth * ch * roughnessHeight];
             for (int y = 0; y < roughnessHeight; ++y)
             {
                 var roughness = (y + 0.5) / roughnessHeight;
@@ -49,11 +49,12 @@ namespace UE4IBLLookUpTextureGen
                     var nvDot = (x + 0.5) / nvDotWidth;
                     var lut = Util.IntegrateBRDF(roughness, nvDot, hammersleySampleCount);
 
-                    var pos = (y * nvDotWidth + x) * bpp;
-                    pixels[pos + 0] = 0; // B
-                    pixels[pos + 1] = (byte)Math.Min(Math.Max(0, lut.Y * 255), 255); // G
-                    pixels[pos + 2] = (byte)Math.Min(Math.Max(0, lut.X * 255), 255); // R
-                    pixels[pos + 3] = 255; // A
+                    var pos = (y * nvDotWidth + x) * ch;
+                    pixels[pos + 0] =       // R
+                        (ushort)(Math.Min(Math.Max(0, lut.X), 1) * ushort.MaxValue + 0.5);
+                    pixels[pos + 1] =       // G
+                        (ushort)(Math.Min(Math.Max(0, lut.Y), 1) * ushort.MaxValue + 0.5);
+                    pixels[pos + 2] = 0;    // B
                 }
             }
 
@@ -64,12 +65,12 @@ namespace UE4IBLLookUpTextureGen
                     roughnessHeight,
                     96,
                     96,
-                    PixelFormats.Bgra32,
+                    PixelFormats.Rgb48,
                     null);
             bmp.WritePixels(
                 new Int32Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight),
                 pixels,
-                nvDotWidth * bpp,
+                nvDotWidth * ch * sizeof(ushort),
                 0);
 
             return bmp;

@@ -21,11 +21,12 @@ namespace UE4IBLLookUpTextureGen
         {
             Util.ValidateRange(sampleCount, 1, int.MaxValue, "sampleCount");
 
-            // 浮動小数ピクセル配列作成
-            var pixels = new float[sampleCount];
+            // 16ビットグレーピクセル配列作成
+            var pixels = new ushort[sampleCount];
             for (int hi = 0; hi < sampleCount; ++hi)
             {
-                pixels[hi] = (float)Util.Hammersley(hi, sampleCount).Y;
+                pixels[hi] =
+                    (ushort)(Util.Hammersley(hi, sampleCount).Y * ushort.MaxValue + 0.5);
             }
 
             // イメージ作成
@@ -35,12 +36,12 @@ namespace UE4IBLLookUpTextureGen
                     1,
                     96,
                     96,
-                    PixelFormats.Gray32Float,
+                    PixelFormats.Gray16,
                     null);
             bmp.WritePixels(
                 new Int32Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight),
                 pixels,
-                sampleCount * sizeof(float),
+                sampleCount * sizeof(ushort),
                 0);
 
             return bmp;

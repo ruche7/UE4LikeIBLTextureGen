@@ -4,6 +4,8 @@
 
 Look-up texture (LUT) generator for image-based lighting using the UE4 method.
 
+[SlimDX](http://slimdx.org/) is required to build this project.
+
 ## References
 
 * [SIGGRAPH 2013 Course: Physically Based Shading in Theory and Practice](http://blog.selfshadow.com/publications/s2013-shading-course/)

@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using SlimDX;
+using SlimDX.Direct3D10;
+using DXGI = SlimDX.DXGI;
 
 namespace UE4IBLLookUpTextureGen
 {
@@ -15,8 +15,9 @@ namespace UE4IBLLookUpTextureGen
     internal static class UE4LookUpTextureMaker
     {
         /// <summary>
-        /// テクスチャイメージを生成する。
+        /// テクスチャを生成する。
         /// </summary>
+        /// <param name="device">Direct3D10デバイス。</param>
         /// <param name="nvDotWidth">
         /// 法線ベクトルと視点ベクトルとの内積値をアサインするイメージ横幅。
         /// 1 以上かつ 2 の累乗値。
@@ -27,20 +28,25 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="hammersleySampleCount">
         /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
-        /// <returns>生成されたテクスチャイメージ。</returns>
-        public static BitmapSource Make(
+        /// <returns>生成されたテクスチャ。</returns>
+        public static Texture2D Make(
+            Device device,
             int nvDotWidth,
             int roughnessHeight,
             int hammersleySampleCount)
         {
+            if (device == null)
+            {
+                throw new ArgumentNullException("device");
+            }
             ValidateWidthOrHeight(nvDotWidth, "nvDotWidth");
             ValidateWidthOrHeight(roughnessHeight, "roughnessHeight");
             Util.ValidateRange(
                 hammersleySampleCount, 1, int.MaxValue, "hammersleySampleCount");
 
-            // 16ビットRGBピクセル配列作成
-            var ch = 3;
-            var pixels = new ushort[nvDotWidth * ch * roughnessHeight];
+            // 浮動小数RGピクセル配列作成
+            var ch = 2;
+            var pixels = new float[nvDotWidth * ch * roughnessHeight];
             for (int y = 0; y < roughnessHeight; ++y)
             {
                 var roughness = (y + 0.5) / roughnessHeight;
@@ -50,47 +56,50 @@ namespace UE4IBLLookUpTextureGen
                     var lut = Util.IntegrateBRDF(roughness, nvDot, hammersleySampleCount);
 
                     var pos = (y * nvDotWidth + x) * ch;
-                    pixels[pos + 0] =       // R
-                        (ushort)(Math.Min(Math.Max(0, lut.X), 1) * ushort.MaxValue + 0.5);
-                    pixels[pos + 1] =       // G
-                        (ushort)(Math.Min(Math.Max(0, lut.Y), 1) * ushort.MaxValue + 0.5);
-                    pixels[pos + 2] = 0;    // B
+                    pixels[pos + 0] = (float)Math.Min(Math.Max(0, lut.X), 1); // R
+                    pixels[pos + 1] = (float)Math.Min(Math.Max(0, lut.Y), 1); // G
                 }
             }
 
-            // イメージ作成
-            var bmp =
-                new WriteableBitmap(
-                    nvDotWidth,
-                    roughnessHeight,
-                    96,
-                    96,
-                    PixelFormats.Rgb48,
-                    null);
-            bmp.WritePixels(
-                new Int32Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight),
-                pixels,
-                nvDotWidth * ch * sizeof(ushort),
-                0);
+            // テクスチャ情報作成
+            var desc =
+                new Texture2DDescription
+                {
+                    ArraySize = 1,
+                    Format = DXGI.Format.R32G32_Float,
+                    Width = nvDotWidth,
+                    Height = roughnessHeight,
+                    MipLevels = 1,
+                    SampleDescription = new DXGI.SampleDescription(1, 0),
+                };
 
-            return bmp;
+            // テクスチャ生成
+            using (var s = new DataStream(pixels, true, false))
+            {
+                var data = new DataRectangle(sizeof(float) * ch * nvDotWidth, s);
+                return new Texture2D(device, desc, data);
+            }
         }
 
         /// <summary>
-        /// テクスチャイメージを生成する。
+        /// テクスチャを生成する。
         /// </summary>
+        /// <param name="device">Direct3D10デバイス。</param>
         /// <param name="widthAndHeight">
         /// イメージの縦横幅。 1 以上かつ 2 の累乗値。
         /// </param>
         /// <param name="hammersleySampleCount">
         /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
-        /// <returns>生成されたテクスチャイメージ。</returns>
-        public static BitmapSource Make(int widthAndHeight, int hammersleySampleCount)
+        /// <returns>生成されたテクスチャ。</returns>
+        public static Texture2D Make(
+            Device device,
+            int widthAndHeight,
+            int hammersleySampleCount)
         {
             ValidateWidthOrHeight(widthAndHeight, "widthAndHeight");
 
-            return Make(widthAndHeight, widthAndHeight, hammersleySampleCount);
+            return Make(device, widthAndHeight, widthAndHeight, hammersleySampleCount);
         }
 
         /// <summary>

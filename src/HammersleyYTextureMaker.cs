@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using SlimDX;
+using SlimDX.Direct3D10;
+using DXGI = SlimDX.DXGI;
 
 namespace UE4IBLLookUpTextureGen
 {
@@ -11,40 +11,46 @@ namespace UE4IBLLookUpTextureGen
     internal static class HammersleyYTextureMaker
     {
         /// <summary>
-        /// テクスチャイメージを生成する。
+        /// テクスチャを生成する。
         /// </summary>
+        /// <param name="device">Direct3D10デバイス。</param>
         /// <param name="sampleCount">
         /// Hammersley 座標の総サンプリング数。 1 以上。
         /// </param>
-        /// <returns>生成されたテクスチャイメージ。</returns>
-        public static BitmapSource Make(int sampleCount)
+        /// <returns>生成されたテクスチャ。</returns>
+        public static Texture2D Make(Device device, int sampleCount)
         {
+            if (device == null)
+            {
+                throw new ArgumentNullException("device");
+            }
             Util.ValidateRange(sampleCount, 1, int.MaxValue, "sampleCount");
 
-            // 16ビットグレーピクセル配列作成
-            var pixels = new ushort[sampleCount];
+            // 浮動小数ピクセル配列作成
+            var pixels = new float[sampleCount];
             for (int hi = 0; hi < sampleCount; ++hi)
             {
-                pixels[hi] =
-                    (ushort)(Util.Hammersley(hi, sampleCount).Y * ushort.MaxValue + 0.5);
+                pixels[hi] = (float)Util.Hammersley(hi, sampleCount).Y;
             }
 
-            // イメージ作成
-            var bmp =
-                new WriteableBitmap(
-                    sampleCount,
-                    1,
-                    96,
-                    96,
-                    PixelFormats.Gray16,
-                    null);
-            bmp.WritePixels(
-                new Int32Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight),
-                pixels,
-                sampleCount * sizeof(ushort),
-                0);
+            // テクスチャ情報作成
+            var desc =
+                new Texture2DDescription
+                {
+                    ArraySize = 1,
+                    Format = DXGI.Format.R32_Float,
+                    Width = sampleCount,
+                    Height = 1,
+                    MipLevels = 1,
+                    SampleDescription = new DXGI.SampleDescription(1, 0),
+                };
 
-            return bmp;
+            // テクスチャ生成
+            using (var s = new DataStream(pixels, true, false))
+            {
+                var data = new DataRectangle(sizeof(float) * sampleCount, s);
+                return new Texture2D(device, desc, data);
+            }
         }
     }
 }

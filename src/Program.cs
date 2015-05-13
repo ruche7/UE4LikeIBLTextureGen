@@ -1,6 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Windows.Media.Imaging;
+using SlimDX.Direct3D10;
 
 namespace UE4IBLLookUpTextureGen
 {
@@ -18,69 +17,30 @@ namespace UE4IBLLookUpTextureGen
             int lutSize = 256;
             int hammersleySampleCount = 1024;
 
-            // LUT イメージ保存
-            Console.WriteLine("Making LUT ...");
-            SaveTexture(
-                UE4LookUpTextureMaker.Make(lutSize, hammersleySampleCount),
-                (args.Length < 1) ? "lut.png" : args[0]);
+            // Direct3D10デバイス作成
+            using (var device = new Device(DeviceCreationFlags.None))
+            {
+                // LUT イメージ保存
+                Console.WriteLine("Making LUT ...");
+                using (
+                    var tex =
+                        UE4LookUpTextureMaker.Make(device, lutSize, hammersleySampleCount))
+                {
+                    var filePath = (args.Length < 1) ? "lut.dds" : args[0];
+                    var res = Texture2D.ToFile(tex, ImageFileFormat.Dds, filePath);
+                }
 
-            // Hammersley Y座標イメージ保存
-            Console.WriteLine("Making Y of Hammersley points ...");
-            SaveTexture(
-                HammersleyYTextureMaker.Make(hammersleySampleCount),
-                (args.Length < 2) ? "hammersley_y.png" : args[1]);
+                // Hammersley Y座標イメージ保存
+                Console.WriteLine("Making Y of Hammersley points ...");
+                using (
+                    var tex = HammersleyYTextureMaker.Make(device, hammersleySampleCount))
+                {
+                    var filePath = (args.Length < 2) ? "hammersley_y.dds" : args[1];
+                    var res = Texture2D.ToFile(tex, ImageFileFormat.Dds, filePath);
+                }
+            }
 
             return 0;
-        }
-
-        /// <summary>
-        /// テクスチャイメージを画像ファイルに保存する。
-        /// </summary>
-        /// <param name="bmp">テクスチャイメージ。</param>
-        /// <param name="filePath">画像ファイルパス。拡張子で形式が決まる。</param>
-        private static void SaveTexture(BitmapSource bmp, string filePath)
-        {
-            // ファイルパスに応じてエンコーダ選択
-            BitmapEncoder enc = null;
-            switch (Path.GetExtension(filePath).ToLower())
-            {
-            case ".bmp":
-            case ".dib":
-                enc = new BmpBitmapEncoder();
-                break;
-
-            case ".png":
-                enc = new PngBitmapEncoder();
-                break;
-
-            case ".jpg":
-            case ".jpeg":
-                enc = new JpegBitmapEncoder();
-                break;
-
-            case ".tif":
-            case ".tiff":
-                enc = new TiffBitmapEncoder();
-                break;
-
-            case ".gif":
-                enc = new GifBitmapEncoder();
-                break;
-
-            default:
-                filePath += ".png";
-                enc = new PngBitmapEncoder();
-                break;
-            }
-
-            // イメージ追加
-            enc.Frames.Add(BitmapFrame.Create(bmp));
-
-            // 保存
-            using (var s = File.OpenWrite(filePath))
-            {
-                enc.Save(s);
-            }
         }
     }
 }

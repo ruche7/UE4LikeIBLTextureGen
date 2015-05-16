@@ -1,8 +1,8 @@
-# UE4IBLLookUpTextureGen
+# UE4LikeIBLTextureGen
 
 ## What's this?
 
-Look-up texture (LUT) generator for image-based lighting using the UE4 method.
+The texture file generator for [UE4LikeIBL](https://github.com/ruche7/UE4LikeIBL).
 
 [SlimDX](http://slimdx.org/) is required to build this project.
 

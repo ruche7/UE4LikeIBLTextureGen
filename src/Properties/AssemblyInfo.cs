@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更してください。
 [assembly: AssemblyTitle("UE4LikeIBLTextureGen")]
-[assembly: AssemblyDescription("Look-up texture (LUT) generator for image-based lighting using the UE4 method.")]
+[assembly: AssemblyDescription("The texture file generator for UE4LikeIBL.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("UE4LikeIBLTextureGen")]

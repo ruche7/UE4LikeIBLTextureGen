@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30219.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UE4IBLLookUpTextureGen", "src\UE4IBLLookUpTextureGen.csproj", "{B02D10EB-ED16-426C-93DA-6CC681FE03ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UE4LikeIBLTextureGen", "src\UE4LikeIBLTextureGen.csproj", "{B02D10EB-ED16-426C-93DA-6CC681FE03ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

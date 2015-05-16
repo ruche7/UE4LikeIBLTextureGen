@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Media.Media3D;
 
-namespace UE4IBLLookUpTextureGen
+namespace UE4LikeIBLTextureGen
 {
     /// <summary>
     /// 便利処理をまとめた静的クラス。
@@ -17,6 +17,58 @@ namespace UE4IBLLookUpTextureGen
         public static bool IsPowerOf2(int value)
         {
             return (value > 0 && (value & (value - 1)) == 0);
+        }
+
+        /// <summary>
+        /// 値が範囲内に収まっているか検証する。
+        /// </summary>
+        /// <typeparam name="T">値の型。</typeparam>
+        /// <param name="value">調べる値。</param>
+        /// <param name="minLimit">最小許容値。</param>
+        /// <param name="maxLimit">最大許容値。</param>
+        /// <param name="paramName">例外生成に用いる引数名。</param>
+        public static void ValidateRange<T>(
+            T value,
+            T minLimit,
+            T maxLimit,
+            string paramName)
+        {
+            if ((dynamic)value < minLimit)
+            {
+                throw new ArgumentOutOfRangeException(
+                    paramName,
+                    "The value of `" + paramName + "` is less than " + minLimit + ".");
+            }
+            if ((dynamic)value > maxLimit)
+            {
+                throw new ArgumentOutOfRangeException(
+                    paramName,
+                    "The value of `" + paramName + "` is greater than " + maxLimit + ".");
+            }
+        }
+
+        /// <summary>
+        /// 値がテクスチャの縦横幅として適切か検証する。
+        /// </summary>
+        /// <param name="value">調べる値。</param>
+        /// <param name="minLimit">最小許容値。</param>
+        /// <param name="maxLimit">最大許容値。</param>
+        /// <param name="paramName">例外生成に用いる引数名。</param>
+        public static void ValidateTextureSize(
+            int value,
+            int minLimit,
+            int maxLimit,
+            string paramName)
+        {
+            ValidateRange(value, minLimit, maxLimit, paramName);
+
+            // 2の累乗数でなければならない
+            if (!Util.IsPowerOf2(value))
+            {
+                throw new ArgumentException(
+                    "The value of `" + paramName + "` is not a power of 2.",
+                    paramName);
+            }
         }
 
         /// <summary>
@@ -148,7 +200,7 @@ namespace UE4IBLLookUpTextureGen
         }
 
         /// <summary>
-        /// Hammersley 座標値を求める。
+        /// Hammersley 座標値を算出する。
         /// </summary>
         /// <param name="index">
         /// サンプリングインデックス。 0 以上 sampleCount 未満。
@@ -178,31 +230,46 @@ namespace UE4IBLLookUpTextureGen
         }
 
         /// <summary>
-        /// 値が範囲内に収まっているか検証する。
+        /// Equirectangular projection マッピングのUV値を算出する。
         /// </summary>
-        /// <typeparam name="T">値の型。</typeparam>
-        /// <param name="value">調べる値。</param>
-        /// <param name="minLimit">最小許容値。</param>
-        /// <param name="maxLimit">最大許容値。</param>
-        /// <param name="paramName">例外生成に用いる引数名。</param>
-        public static void ValidateRange<T>(
-            T value,
-            T minLimit,
-            T maxLimit,
-            string paramName)
+        /// <param name="eyeY">
+        /// 正規化された視線ベクトルの Y 値。 -1.0 以上 1.0 以下。
+        /// </param>
+        /// <param name="eyeZ">
+        /// 正規化された視線ベクトルの Z 値。 -1.0 以上 1.0 以下。
+        /// </param>
+        /// <returns>UV値。</returns>
+        /// <remarks>
+        /// マップの中心座標は Z 軸の正方向とする。
+        /// 
+        /// 視線ベクトルの X 値は Y 値と Z 値から求められる。
+        /// X 値は常に 0 以上の値として扱う。
+        /// 
+        /// Y 値と Z 値のみの視線ベクトルの長さが 1 を超える場合、
+        /// X 値を 0 として正規化したベクトルを入力値とする。
+        /// </remarks>
+        public static Vector EquirectangularMapUV(double eyeY, double eyeZ)
         {
-            if ((dynamic)value < minLimit)
+            // 視線ベクトル決定
+            Vector3D eye;
+            var len2YZ = eyeY * eyeY + eyeZ * eyeZ;
+            if (len2YZ > 1)
             {
-                throw new ArgumentOutOfRangeException(
-                    paramName,
-                    "The value of `" + paramName + "` is less than " + minLimit + ".");
+                var lenYZ = Math.Sqrt(len2YZ);
+                eye = new Vector3D(0, eyeY / lenYZ, eyeZ / lenYZ);
             }
-            if ((dynamic)value > maxLimit)
+            else
             {
-                throw new ArgumentOutOfRangeException(
-                    paramName,
-                    "The value of `" + paramName + "` is greater than " + maxLimit + ".");
+                eye = new Vector3D(Math.Sqrt(1 - len2YZ), eyeY, eyeZ);
             }
+
+            // XZ成分の長さを算出
+            var lenXZ = Math.Sqrt(eye.X * eye.X + eye.Z * eye.Z);
+
+            return
+                new Vector(
+                    Math.Atan2(eye.X, eye.Z) / Math.PI * 0.5 + 0.5,
+                    -Math.Atan2(eye.Y, lenXZ) / Math.PI + 0.5);
         }
     }
 }

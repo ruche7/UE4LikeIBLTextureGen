@@ -3,16 +3,16 @@ using SlimDX;
 using SlimDX.Direct3D10;
 using DXGI = SlimDX.DXGI;
 
-namespace UE4IBLLookUpTextureGen
+namespace UE4LikeIBLTextureGen
 {
     /// <summary>
-    /// UE4 の IBL に用いる Look-up テクスチャを生成する静的クラス。
+    /// IBL に用いるBRDF項の Look-up テクスチャを生成する静的クラス。
     /// </summary>
     /// <remarks>
     /// 参考文献: SIGGRAPH 2013 Course: Physically Based Shading in Theory and Practice
     /// http://blog.selfshadow.com/publications/s2013-shading-course/
     /// </remarks>
-    internal static class UE4LookUpTextureMaker
+    internal static class BrdfLookUpTextureMaker
     {
         /// <summary>
         /// テクスチャを生成する。
@@ -39,8 +39,8 @@ namespace UE4IBLLookUpTextureGen
             {
                 throw new ArgumentNullException("device");
             }
-            ValidateWidthOrHeight(nvDotWidth, "nvDotWidth");
-            ValidateWidthOrHeight(roughnessHeight, "roughnessHeight");
+            Util.ValidateTextureSize(nvDotWidth, 1, int.MaxValue, "nvDotWidth");
+            Util.ValidateTextureSize(roughnessHeight, 1, int.MaxValue, "roughnessHeight");
             Util.ValidateRange(
                 hammersleySampleCount, 1, int.MaxValue, "hammersleySampleCount");
 
@@ -97,26 +97,9 @@ namespace UE4IBLLookUpTextureGen
             int widthAndHeight,
             int hammersleySampleCount)
         {
-            ValidateWidthOrHeight(widthAndHeight, "widthAndHeight");
+            Util.ValidateTextureSize(widthAndHeight, 1, int.MaxValue, "widthAndHeight");
 
             return Make(device, widthAndHeight, widthAndHeight, hammersleySampleCount);
-        }
-
-        /// <summary>
-        /// イメージの縦横幅値を検証する。
-        /// </summary>
-        /// <param name="value">縦横幅値。</param>
-        /// <param name="paramName">例外生成に用いる引数名。</param>
-        private static void ValidateWidthOrHeight(int value, string paramName)
-        {
-            Util.ValidateRange(value, 1, int.MaxValue, paramName);
-
-            if (!Util.IsPowerOf2(value))
-            {
-                throw new ArgumentException(
-                    "The value of `" + paramName + "` is not a power of 2.",
-                    paramName);
-            }
         }
     }
 }

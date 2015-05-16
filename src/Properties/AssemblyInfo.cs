@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
 // アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更してください。
-[assembly: AssemblyTitle("UE4IBLLookUpTextureGen")]
+[assembly: AssemblyTitle("UE4LikeIBLTextureGen")]
 [assembly: AssemblyDescription("Look-up texture (LUT) generator for image-based lighting using the UE4 method.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("UE4IBLLookUpTextureGen")]
+[assembly: AssemblyProduct("UE4LikeIBLTextureGen")]
 [assembly: AssemblyCopyright("Copyright (C) ruche.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

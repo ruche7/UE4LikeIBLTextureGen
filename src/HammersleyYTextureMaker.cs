@@ -3,7 +3,7 @@ using SlimDX;
 using SlimDX.Direct3D10;
 using DXGI = SlimDX.DXGI;
 
-namespace UE4IBLLookUpTextureGen
+namespace UE4LikeIBLTextureGen
 {
     /// <summary>
     /// Hammersley 座標のY座標値を格納したテクスチャを生成する静的クラス。
@@ -15,7 +15,7 @@ namespace UE4IBLLookUpTextureGen
         /// </summary>
         /// <param name="device">Direct3D10デバイス。</param>
         /// <param name="sampleCount">
-        /// Hammersley 座標の総サンプリング数。 1 以上。
+        /// Hammersley 座標の総サンプリング数。 1 以上かつ 2 の累乗値。
         /// </param>
         /// <returns>生成されたテクスチャ。</returns>
         public static Texture2D Make(Device device, int sampleCount)
@@ -24,7 +24,7 @@ namespace UE4IBLLookUpTextureGen
             {
                 throw new ArgumentNullException("device");
             }
-            Util.ValidateRange(sampleCount, 1, int.MaxValue, "sampleCount");
+            Util.ValidateTextureSize(sampleCount, 1, int.MaxValue, "sampleCount");
 
             // 浮動小数ピクセル配列作成
             var pixels = new float[sampleCount];

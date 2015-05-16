@@ -1,7 +1,7 @@
 ﻿using System;
 using SlimDX.Direct3D10;
 
-namespace UE4IBLLookUpTextureGen
+namespace UE4LikeIBLTextureGen
 {
     /// <summary>
     /// プログラムのメインクラス。
@@ -14,29 +14,46 @@ namespace UE4IBLLookUpTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
-            int lutSize = 256;
+            int envLutSize = 256;
+            int brdfLutSize = 256;
             int hammersleySampleCount = 1024;
 
             // Direct3D10デバイス作成
             using (var device = new Device(DeviceCreationFlags.None))
             {
-                // LUT イメージ保存
-                Console.WriteLine("Making LUT ...");
+                // Equirectangular projection マッピング Look-up テクスチャ保存
+                Console.WriteLine(
+                    "Making the look-up texture of " +
+                    "the Equirectangular projection mapping ...");
                 using (
                     var tex =
-                        UE4LookUpTextureMaker.Make(device, lutSize, hammersleySampleCount))
+                        EquirectangularLookUpTextureMaker.Make(
+                            device,
+                            envLutSize,
+                            envLutSize))
                 {
-                    var filePath = (args.Length < 1) ? "lut.dds" : args[0];
-                    var res = Texture2D.ToFile(tex, ImageFileFormat.Dds, filePath);
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "lookup_envmap.dds");
                 }
 
-                // Hammersley Y座標イメージ保存
-                Console.WriteLine("Making Y of Hammersley points ...");
+                // IBL Look-up テクスチャ保存
+                Console.WriteLine("Making the look-up texture of IBL ...");
+                using (
+                    var tex =
+                        BrdfLookUpTextureMaker.Make(
+                            device,
+                            brdfLutSize,
+                            hammersleySampleCount))
+                {
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "lookup_brdf.dds");
+                }
+
+                // Hammersley Y座標値テクスチャ保存
+                Console.WriteLine(
+                    "Making the texture of Y-value of the Hammersley points ...");
                 using (
                     var tex = HammersleyYTextureMaker.Make(device, hammersleySampleCount))
                 {
-                    var filePath = (args.Length < 2) ? "hammersley_y.dds" : args[1];
-                    var res = Texture2D.ToFile(tex, ImageFileFormat.Dds, filePath);
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "hammersley_y.dds");
                 }
             }
 

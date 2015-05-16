@@ -6,9 +6,10 @@ using DXGI = SlimDX.DXGI;
 namespace UE4LikeIBLTextureGen
 {
     /// <summary>
-    /// Equirectangular projection マッピングの Look-up テクスチャを生成する静的クラス。
+    /// キューブマップ展開図から Equirectangular projection マッピングへ変換するための
+    /// テクスチャを生成する静的クラス。
     /// </summary>
-    internal static class EquirectangularLookUpTextureMaker
+    internal static class CubeTransformTextureMaker
     {
         /// <summary>
         /// テクスチャを生成する。
@@ -17,10 +18,6 @@ namespace UE4LikeIBLTextureGen
         /// <param name="width">生成するテクスチャの横幅。</param>
         /// <param name="height">生成するテクスチャの横幅。</param>
         /// <returns>生成されたテクスチャ。</returns>
-        /// <remarks>
-        /// 横方向を単位視線ベクトルの Z 値、縦方向を単位視線ベクトルの Y 値とする。
-        /// いずれも [-1, 1] の値範囲をテクスチャの縦横幅に線形対応させる。
-        /// </remarks>
         public static Texture2D Make(Device device, int width, int height)
         {
             if (device == null)
@@ -35,13 +32,13 @@ namespace UE4LikeIBLTextureGen
             var pixels = new Half[width * ch * height];
             for (int y = 0; y < height; ++y)
             {
-                var eyeY = (y * 2.0 + 1) / height - 1;
-                for (int z = 0; z < width; ++z)
+                var v = (y + 0.5) / height;
+                for (int x = 0; x < width; ++x)
                 {
-                    var eyeZ = (z * 2.0 + 1) / width - 1;
-                    var uv = Util.EquirectangularMapUV(eyeY, eyeZ);
+                    var u = (x + 0.5) / width;
+                    var uv = Util.EquirectangularUVToCube(u, v);
 
-                    var pos = (y * width + z) * ch;
+                    var pos = (y * width + x) * ch;
                     pixels[pos + 0] = (Half)(float)Math.Min(Math.Max(0, uv.X), 1); // R
                     pixels[pos + 1] = (Half)(float)Math.Min(Math.Max(0, uv.Y), 1); // G
                 }

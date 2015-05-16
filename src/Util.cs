@@ -10,6 +10,11 @@ namespace UE4LikeIBLTextureGen
     internal static class Util
     {
         /// <summary>
+        /// Half 型のサイズ。
+        /// </summary>
+        public const int SizeOfHalf = sizeof(ushort);
+
+        /// <summary>
         /// 値が2の累乗値であるか否かを取得する。
         /// </summary>
         /// <param name="value">調べる値。</param>
@@ -250,6 +255,9 @@ namespace UE4LikeIBLTextureGen
         /// </remarks>
         public static Vector EquirectangularMapUV(double eyeY, double eyeZ)
         {
+            ValidateRange(eyeY, -1, +1, "eyeY");
+            ValidateRange(eyeZ, -1, +1, "eyeZ");
+
             // 視線ベクトル決定
             Vector3D eye;
             var len2YZ = eyeY * eyeY + eyeZ * eyeZ;
@@ -270,6 +278,124 @@ namespace UE4LikeIBLTextureGen
                 new Vector(
                     Math.Atan2(eye.X, eye.Z) / Math.PI * 0.5 + 0.5,
                     -Math.Atan2(eye.Y, lenXZ) / Math.PI + 0.5);
+        }
+
+        /// <summary>
+        /// Equirectangular projection マッピングのUV座標を
+        /// キューブマップ展開図のUV座標に変換する。
+        /// </summary>
+        /// <param name="u">
+        /// Equirectangular projection マッピングのU座標。 0.0 以上 1.0 以下。
+        /// </param>
+        /// <param name="v">
+        /// Equirectangular projection マッピングのV座標。 0.0 以上 1.0 以下。
+        /// </param>
+        /// <returns>キューブマップ展開図のUV座標。</returns>
+        /// <remarks>
+        /// キューブマップ展開図は次のような形であることを想定している。
+        /// 
+        /// <pre>
+        /// |  |+Y|  |  |
+        /// |-X|+Z|+X|-Z|
+        /// |  |-Y|  |  |
+        /// |  |  |  |  |
+        /// </pre>
+        /// 
+        /// Equirectangular projection マッピングの中心座標は Z 軸の正方向とする。
+        /// </remarks>
+        public static Vector EquirectangularUVToCube(double u, double v)
+        {
+            ValidateRange(u, 0, 1, "u");
+            ValidateRange(v, 0, 1, "v");
+
+            // V 成分は視線ベクトルとXZ平面との角度に線形対応
+            // V==0.0 => -π/2
+            // V==0.5 => 0
+            // V==1.0 => +π/2
+            var rv = (v - 0.5) * Math.PI;
+
+            // U 成分はXZ平面上における視線ベクトルと Z 軸との角度に線形対応
+            // U==0.0 => -π
+            // U==0.5 => 0
+            // U==1.0 => +π
+            var ru = (u - 0.5) * Math.PI * 2;
+
+            // 視線ベクトルを作成
+            var cosRV = Math.Cos(rv);
+            var eye =
+                new Vector3D(cosRV * Math.Sin(ru), -Math.Sin(rv), cosRV * Math.Cos(ru));
+
+            // 各面上における [(-1, -1), (+1, +1)] 座標と
+            // キューブマップ展開図上の各面への平行移動量を決定
+            var pos = new Vector();
+            var trans = new Vector();
+            var absEye = new Vector3D(Math.Abs(eye.X), Math.Abs(eye.Y), Math.Abs(eye.Z));
+            if (absEye.Z > absEye.X && absEye.Z > absEye.Y)
+            {
+                if (eye.Z < 0)
+                {
+                    // -Z
+                    pos.X = -eye.X / absEye.Z;
+                    pos.Y = eye.Y / absEye.Z;
+                    trans.X = +0.75;
+                    trans.Y = +0.25;
+                }
+                else
+                {
+                    // +Z
+                    pos.X = eye.X / absEye.Z;
+                    pos.Y = eye.Y / absEye.Z;
+                    trans.X = -0.25;
+                    trans.Y = +0.25;
+                }
+            }
+            else if (absEye.Y > absEye.X)
+            {
+                if (eye.Y < 0)
+                {
+                    // -Y
+                    pos.X = eye.X / absEye.Y;
+                    pos.Y = eye.Z / absEye.Y;
+                    trans.X = -0.25;
+                    trans.Y = -0.25;
+                }
+                else
+                {
+                    // +Y
+                    pos.X = eye.X / absEye.Y;
+                    pos.Y = -eye.Z / absEye.Y;
+                    trans.X = -0.25;
+                    trans.Y = +0.75;
+                }
+            }
+            else
+            {
+                if (eye.X < 0)
+                {
+                    // -X
+                    pos.X = eye.Z / absEye.X;
+                    pos.Y = eye.Y / absEye.X;
+                    trans.X = -0.75;
+                    trans.Y = +0.25;
+                }
+                else
+                {
+                    // +X
+                    pos.X = -eye.Z / absEye.X;
+                    pos.Y = eye.Y / absEye.X;
+                    trans.X = +0.25;
+                    trans.Y = +0.25;
+                }
+            }
+
+            // キューブの各面位置へ移動
+            pos = pos * 0.25 + trans;
+
+            // UV座標系に変換
+            pos.X = pos.X * 0.5 + 0.5;
+            pos.Y = -pos.Y * 0.5 + 0.5;
+
+            return pos;
         }
     }
 }

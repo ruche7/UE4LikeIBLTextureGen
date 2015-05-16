@@ -46,7 +46,7 @@ namespace UE4LikeIBLTextureGen
 
             // 浮動小数RGピクセル配列作成
             var ch = 2;
-            var pixels = new float[nvDotWidth * ch * roughnessHeight];
+            var pixels = new Half[nvDotWidth * ch * roughnessHeight];
             for (int y = 0; y < roughnessHeight; ++y)
             {
                 var roughness = (y + 0.5) / roughnessHeight;
@@ -56,8 +56,8 @@ namespace UE4LikeIBLTextureGen
                     var lut = Util.IntegrateBRDF(roughness, nvDot, hammersleySampleCount);
 
                     var pos = (y * nvDotWidth + x) * ch;
-                    pixels[pos + 0] = (float)Math.Min(Math.Max(0, lut.X), 1); // R
-                    pixels[pos + 1] = (float)Math.Min(Math.Max(0, lut.Y), 1); // G
+                    pixels[pos + 0] = (Half)(float)Math.Min(Math.Max(0, lut.X), 1); // R
+                    pixels[pos + 1] = (Half)(float)Math.Min(Math.Max(0, lut.Y), 1); // G
                 }
             }
 
@@ -66,7 +66,7 @@ namespace UE4LikeIBLTextureGen
                 new Texture2DDescription
                 {
                     ArraySize = 1,
-                    Format = DXGI.Format.R32G32_Float,
+                    Format = DXGI.Format.R16G16_Float,
                     Width = nvDotWidth,
                     Height = roughnessHeight,
                     MipLevels = 1,
@@ -76,7 +76,7 @@ namespace UE4LikeIBLTextureGen
             // テクスチャ生成
             using (var s = new DataStream(pixels, true, false))
             {
-                var data = new DataRectangle(sizeof(float) * ch * nvDotWidth, s);
+                var data = new DataRectangle(Util.SizeOfHalf * ch * nvDotWidth, s);
                 return new Texture2D(device, desc, data);
             }
         }

@@ -14,6 +14,7 @@ namespace UE4LikeIBLTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
+            int cubeFaceSize = 256;
             int envLutSize = 256;
             int brdfLutSize = 256;
             int hammersleySampleCount = 1024;
@@ -21,6 +22,19 @@ namespace UE4LikeIBLTextureGen
             // Direct3D10デバイス作成
             using (var device = new Device(DeviceCreationFlags.None))
             {
+                // キューブマップから Equirectangular projection マッピングへ
+                // 変換するためのテクスチャ保存
+                Console.WriteLine("Making the texture for transforming cube map ...");
+                using (
+                    var tex =
+                        CubeTransformTextureMaker.Make(
+                            device,
+                            cubeFaceSize * 4,
+                            cubeFaceSize * 2))
+                {
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "cube_trans.dds");
+                }
+
                 // Equirectangular projection マッピング Look-up テクスチャ保存
                 Console.WriteLine(
                     "Making the look-up texture of " +

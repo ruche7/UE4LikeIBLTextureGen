@@ -6,19 +6,23 @@ using DXGI = SlimDX.DXGI;
 namespace UE4LikeIBLTextureGen
 {
     /// <summary>
-    /// キューブマップ展開図から Equirectangular projection マッピングへ変換するための
-    /// テクスチャを生成する静的クラス。
+    /// キューブマップ展開図の Look-up テクスチャを生成する静的クラス。
     /// </summary>
-    internal static class CubeTransformTextureMaker
+    internal static class CubeLookUpTextureMaker
     {
         /// <summary>
-        /// テクスチャを生成する。
+        /// 単位視線ベクトルからキューブマップ展開図のUV値を取得するためのテクスチャを
+        /// 生成する。
         /// </summary>
         /// <param name="device">Direct3D10デバイス。</param>
         /// <param name="width">生成するテクスチャの横幅。</param>
         /// <param name="height">生成するテクスチャの横幅。</param>
         /// <returns>生成されたテクスチャ。</returns>
-        public static Texture2D Make(Device device, int width, int height)
+        /// <remarks>
+        /// 横方向を単位視線ベクトルの X 値、縦方向を単位視線ベクトルの Z 値とする。
+        /// いずれも [-1, 1] の値範囲をテクスチャの縦横幅に線形対応させる。
+        /// </remarks>
+        public static Texture2D MakeEyeToMapUV(Device device, int width, int height)
         {
             if (device == null)
             {
@@ -30,15 +34,15 @@ namespace UE4LikeIBLTextureGen
             // 浮動小数RGピクセル配列作成
             var ch = 2;
             var pixels = new Half[width * ch * height];
-            for (int y = 0; y < height; ++y)
+            for (int z = 0; z < height; ++z)
             {
-                var v = (y + 0.5) / height;
+                var eyeZ = (z * 2.0 + 1) / height - 1;
                 for (int x = 0; x < width; ++x)
                 {
-                    var u = (x + 0.5) / width;
-                    var uv = Util.EquirectangularUVToCube(u, v);
+                    var eyeX = (x * 2.0 + 1) / width - 1;
+                    var uv = Util.EyeToCubeUV(eyeX, eyeZ);
 
-                    var pos = (y * width + x) * ch;
+                    var pos = (z * width + x) * ch;
                     pixels[pos + 0] = (Half)(float)Math.Min(Math.Max(0, uv.X), 1); // R
                     pixels[pos + 1] = (Half)(float)Math.Min(Math.Max(0, uv.Y), 1); // G
                 }

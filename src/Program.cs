@@ -14,39 +14,42 @@ namespace UE4LikeIBLTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
-            int cubeFaceSize = 256;
-            int envLutSize = 256;
+            int cubeLutSize = 512;
+            int equirectLutSize = 256;
             int brdfLutSize = 256;
             int hammersleySampleCount = 1024;
 
             // Direct3D10デバイス作成
             using (var device = new Device(DeviceCreationFlags.None))
             {
-                // キューブマップから Equirectangular projection マッピングへ
-                // 変換するためのテクスチャ保存
-                Console.WriteLine("Making the texture for transforming cube map ...");
+                // 単位視線ベクトルからキューブマップ展開図のUV値へ変換するための
+                // テクスチャ保存
+                Console.WriteLine(
+                    "Making the texture for converting from the unit vector of eye " +
+                    "to UV value of cube mapping ...");
                 using (
                     var tex =
-                        CubeTransformTextureMaker.Make(
+                        CubeLookUpTextureMaker.MakeEyeToMapUV(
                             device,
-                            cubeFaceSize * 4,
-                            cubeFaceSize * 2))
+                            cubeLutSize,
+                            cubeLutSize))
                 {
-                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "cube_trans.dds");
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "eye_to_cube.dds");
                 }
 
-                // Equirectangular projection マッピング Look-up テクスチャ保存
+                // 単位視線ベクトルから Equirectangular projection マッピングのUV値へ
+                // 変換するためのテクスチャ保存
                 Console.WriteLine(
-                    "Making the look-up texture of " +
-                    "the Equirectangular projection mapping ...");
+                    "Making the texture for converting from the unit vector of eye " +
+                    "to UV value of Equirectangular projection mapping ...");
                 using (
                     var tex =
-                        EquirectangularLookUpTextureMaker.Make(
+                        EquirectangularLookUpTextureMaker.MakeEyeToMapUV(
                             device,
-                            envLutSize,
-                            envLutSize))
+                            equirectLutSize,
+                            equirectLutSize))
                 {
-                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "lookup_envmap.dds");
+                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "eye_to_equirect.dds");
                 }
 
                 // IBL Look-up テクスチャ保存

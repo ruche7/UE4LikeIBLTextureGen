@@ -235,6 +235,124 @@ namespace UE4LikeIBLTextureGen
         }
 
         /// <summary>
+        /// キューブマップ展開図のUV値を算出する。
+        /// </summary>
+        /// <param name="eyeX">
+        /// 正規化された視線ベクトルの X 値。 -1.0 以上 1.0 以下。
+        /// </param>
+        /// <param name="eyeZ">
+        /// 正規化された視線ベクトルの Z 値。 -1.0 以上 1.0 以下。
+        /// </param>
+        /// <returns>UV値。</returns>
+        /// <remarks>
+        /// キューブマップ展開図は次のような形であることを想定している。
+        /// 
+        /// <pre>
+        /// |  |+Y|  |  |
+        /// |-X|+Z|+X|-Z|
+        /// |  |-Y|  |  |
+        /// </pre>
+        /// 
+        /// 視線ベクトルの Y 値は X 値と Z 値から求められる。
+        /// Y 値は常に 0 以上の値として扱う。
+        /// 
+        /// X 値と Z 値のみの視線ベクトルの長さが 1 を超える場合、
+        /// Y 値を 0 として正規化したベクトルを入力値とする。
+        /// </remarks>
+        public static Vector EyeToCubeUV(double eyeX, double eyeZ)
+        {
+            ValidateRange(eyeX, -1, +1, "eyeX");
+            ValidateRange(eyeZ, -1, +1, "eyeZ");
+
+            // 視線ベクトル決定
+            Vector3D eye;
+            var len2XZ = eyeX * eyeX + eyeZ * eyeZ;
+            if (len2XZ > 1)
+            {
+                var lenXZ = Math.Sqrt(len2XZ);
+                eye = new Vector3D(eyeX / lenXZ, 0, eyeZ / lenXZ);
+            }
+            else
+            {
+                eye = new Vector3D(eyeX, Math.Sqrt(1 - len2XZ), eyeZ);
+            }
+
+            // 各面上における [(-1, -1), (+1, +1)] 座標と
+            // キューブマップ展開図上の各面への平行移動量を決定
+            var pos = new Vector();
+            var trans = new Vector();
+            var absEye = new Vector3D(Math.Abs(eye.X), Math.Abs(eye.Y), Math.Abs(eye.Z));
+            if (absEye.Z > absEye.X && absEye.Z > absEye.Y)
+            {
+                if (eye.Z < 0)
+                {
+                    // -Z
+                    pos.X = -eye.X / absEye.Z;
+                    pos.Y = eye.Y / absEye.Z;
+                    trans.X = +0.75;
+                    trans.Y = 0;
+                }
+                else
+                {
+                    // +Z
+                    pos.X = eye.X / absEye.Z;
+                    pos.Y = eye.Y / absEye.Z;
+                    trans.X = -0.25;
+                    trans.Y = 0;
+                }
+            }
+            else if (absEye.Y > absEye.X)
+            {
+                if (eye.Y < 0)
+                {
+                    // -Y (無いはずだが念のため)
+                    pos.X = eye.X / absEye.Y;
+                    pos.Y = eye.Z / absEye.Y;
+                    trans.X = -0.25;
+                    trans.Y = -2.0 / 3;
+                }
+                else
+                {
+                    // +Y
+                    pos.X = eye.X / absEye.Y;
+                    pos.Y = -eye.Z / absEye.Y;
+                    trans.X = -0.25;
+                    trans.Y = +2.0 / 3;
+                }
+            }
+            else
+            {
+                if (eye.X < 0)
+                {
+                    // -X
+                    pos.X = eye.Z / absEye.X;
+                    pos.Y = eye.Y / absEye.X;
+                    trans.X = -0.75;
+                    trans.Y = 0;
+                }
+                else
+                {
+                    // +X
+                    pos.X = -eye.Z / absEye.X;
+                    pos.Y = eye.Y / absEye.X;
+                    trans.X = +0.25;
+                    trans.Y = 0;
+                }
+            }
+
+            // キューブの各面位置へ移動
+            pos.X *= 0.25;
+            pos.Y *= 1.0 / 3;
+            pos += trans;
+
+            // UV座標系に変換
+            pos.X = pos.X * 0.5 + 0.5;
+            pos.Y = -pos.Y * 0.5 + 0.5;
+
+            return pos;
+        }
+
+        /// <summary>
         /// Equirectangular projection マッピングのUV値を算出する。
         /// </summary>
         /// <param name="eyeY">
@@ -253,7 +371,7 @@ namespace UE4LikeIBLTextureGen
         /// Y 値と Z 値のみの視線ベクトルの長さが 1 を超える場合、
         /// X 値を 0 として正規化したベクトルを入力値とする。
         /// </remarks>
-        public static Vector EquirectangularMapUV(double eyeY, double eyeZ)
+        public static Vector EyeToEquirectangularUV(double eyeY, double eyeZ)
         {
             ValidateRange(eyeY, -1, +1, "eyeY");
             ValidateRange(eyeZ, -1, +1, "eyeZ");
@@ -281,8 +399,7 @@ namespace UE4LikeIBLTextureGen
         }
 
         /// <summary>
-        /// Equirectangular projection マッピングのUV座標を
-        /// キューブマップ展開図のUV座標に変換する。
+        /// Equirectangular projection マッピングのUV座標を視線ベクトル値に変換する。
         /// </summary>
         /// <param name="u">
         /// Equirectangular projection マッピングのU座標。 0.0 以上 1.0 以下。
@@ -290,20 +407,13 @@ namespace UE4LikeIBLTextureGen
         /// <param name="v">
         /// Equirectangular projection マッピングのV座標。 0.0 以上 1.0 以下。
         /// </param>
-        /// <returns>キューブマップ展開図のUV座標。</returns>
+        /// <returns>
+        /// 視線ベクトル値。各要素の絶対値のうち最大の値が 1.0 となるように補正される。
+        /// </returns>
         /// <remarks>
-        /// キューブマップ展開図は次のような形であることを想定している。
-        /// 
-        /// <pre>
-        /// |  |+Y|  |  |
-        /// |-X|+Z|+X|-Z|
-        /// |  |-Y|  |  |
-        /// |  |  |  |  |
-        /// </pre>
-        /// 
         /// Equirectangular projection マッピングの中心座標は Z 軸の正方向とする。
         /// </remarks>
-        public static Vector EquirectangularUVToCube(double u, double v)
+        public static Vector3D EquirectangularUVToEye(double u, double v)
         {
             ValidateRange(u, 0, 1, "u");
             ValidateRange(v, 0, 1, "v");
@@ -325,77 +435,49 @@ namespace UE4LikeIBLTextureGen
             var eye =
                 new Vector3D(cosRV * Math.Sin(ru), -Math.Sin(rv), cosRV * Math.Cos(ru));
 
-            // 各面上における [(-1, -1), (+1, +1)] 座標と
-            // キューブマップ展開図上の各面への平行移動量を決定
-            var pos = new Vector();
-            var trans = new Vector();
-            var absEye = new Vector3D(Math.Abs(eye.X), Math.Abs(eye.Y), Math.Abs(eye.Z));
-            if (absEye.Z > absEye.X && absEye.Z > absEye.Y)
+            // 絶対値のうち最大の値が 1.0 となるように補正
+            var maxAbs =
+                Math.Max(Math.Max(Math.Abs(eye.X), Math.Abs(eye.Y)), Math.Abs(eye.Z));
+            if (maxAbs > 0)
             {
-                if (eye.Z < 0)
-                {
-                    // -Z
-                    pos.X = -eye.X / absEye.Z;
-                    pos.Y = eye.Y / absEye.Z;
-                    trans.X = +0.75;
-                    trans.Y = +0.25;
-                }
-                else
-                {
-                    // +Z
-                    pos.X = eye.X / absEye.Z;
-                    pos.Y = eye.Y / absEye.Z;
-                    trans.X = -0.25;
-                    trans.Y = +0.25;
-                }
-            }
-            else if (absEye.Y > absEye.X)
-            {
-                if (eye.Y < 0)
-                {
-                    // -Y
-                    pos.X = eye.X / absEye.Y;
-                    pos.Y = eye.Z / absEye.Y;
-                    trans.X = -0.25;
-                    trans.Y = -0.25;
-                }
-                else
-                {
-                    // +Y
-                    pos.X = eye.X / absEye.Y;
-                    pos.Y = -eye.Z / absEye.Y;
-                    trans.X = -0.25;
-                    trans.Y = +0.75;
-                }
-            }
-            else
-            {
-                if (eye.X < 0)
-                {
-                    // -X
-                    pos.X = eye.Z / absEye.X;
-                    pos.Y = eye.Y / absEye.X;
-                    trans.X = -0.75;
-                    trans.Y = +0.25;
-                }
-                else
-                {
-                    // +X
-                    pos.X = -eye.Z / absEye.X;
-                    pos.Y = eye.Y / absEye.X;
-                    trans.X = +0.25;
-                    trans.Y = +0.25;
-                }
+                eye /= maxAbs;
             }
 
-            // キューブの各面位置へ移動
-            pos = pos * 0.25 + trans;
+            return eye;
+        }
 
-            // UV座標系に変換
-            pos.X = pos.X * 0.5 + 0.5;
-            pos.Y = -pos.Y * 0.5 + 0.5;
+        /// <summary>
+        /// Equirectangular projection マッピングのUV座標を
+        /// キューブマップ展開図のUV座標に変換する。
+        /// </summary>
+        /// <param name="u">
+        /// Equirectangular projection マッピングのU座標。 0.0 以上 1.0 以下。
+        /// </param>
+        /// <param name="v">
+        /// Equirectangular projection マッピングのV座標。 0.0 以上 1.0 以下。
+        /// </param>
+        /// <returns>キューブマップ展開図のUV座標。</returns>
+        /// <remarks>
+        /// キューブマップ展開図は次のような形であることを想定している。
+        /// 
+        /// <pre>
+        /// |  |+Y|  |  |
+        /// |-X|+Z|+X|-Z|
+        /// |  |-Y|  |  |
+        /// </pre>
+        /// 
+        /// Equirectangular projection マッピングの中心座標は Z 軸の正方向とする。
+        /// </remarks>
+        public static Vector EquirectangularUVToCubeUV(double u, double v)
+        {
+            ValidateRange(u, 0, 1, "u");
+            ValidateRange(v, 0, 1, "v");
 
-            return pos;
+            // 視線ベクトルを作成
+            var eye = EquirectangularUVToEye(u, v);
+
+            // 視線ベクトルからキューブ展開図のUV値を求める
+            return EyeToCubeUV(eye.X, eye.Z);
         }
     }
 }

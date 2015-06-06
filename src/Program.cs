@@ -14,8 +14,7 @@ namespace UE4LikeIBLTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
-            int[] cubeLutWidthes = { 512, 1024 };
-            int equirectLutSize = 256;
+            int[] cubeLutWidthes = { 512, 1024, 2048 };
             int brdfLutSize = 256;
             int hammersleySampleCount = 1024;
 
@@ -42,21 +41,6 @@ namespace UE4LikeIBLTextureGen
                             ImageFileFormat.Dds,
                             "equirect_to_cube_" + width + ".dds");
                     }
-                }
-
-                // 単位視線ベクトルから Equirectangular projection マッピングのUV値へ
-                // 変換するためのテクスチャ保存
-                Console.WriteLine(
-                    "Making the texture for converting from the unit vector of eye " +
-                    "to UV value of Equirectangular projection mapping ...");
-                using (
-                    var tex =
-                        EnvMapLookUpTextureMaker.MakeEyeToEquirectangularUV(
-                            device,
-                            equirectLutSize,
-                            equirectLutSize))
-                {
-                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "eye_to_equirect.dds");
                 }
 
                 // IBL Look-up テクスチャ保存

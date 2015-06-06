@@ -48,8 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BrdfLookUpTextureMaker.cs" />
-    <Compile Include="CubeLookUpTextureMaker.cs" />
-    <Compile Include="EquirectangularLookUpTextureMaker.cs" />
+    <Compile Include="EnvMapLookUpTextureMaker.cs" />
     <Compile Include="HammersleyYTextureMaker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

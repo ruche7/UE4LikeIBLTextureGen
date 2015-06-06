@@ -61,24 +61,15 @@ namespace UE4LikeIBLTextureGen
                 }
             }
 
-            // テクスチャ情報作成
-            var desc =
-                new Texture2DDescription
-                {
-                    ArraySize = 1,
-                    Format = DXGI.Format.R16G16_Float,
-                    Width = nvDotWidth,
-                    Height = roughnessHeight,
-                    MipLevels = 1,
-                    SampleDescription = new DXGI.SampleDescription(1, 0),
-                };
-
             // テクスチャ生成
-            using (var s = new DataStream(pixels, true, false))
-            {
-                var data = new DataRectangle(Util.SizeOfHalf * ch * nvDotWidth, s);
-                return new Texture2D(device, desc, data);
-            }
+            return
+                Util.MakeTexture(
+                    device,
+                    nvDotWidth,
+                    roughnessHeight,
+                    DXGI.Format.R16G16_Float,
+                    pixels,
+                    Util.SizeOfHalf * ch);
         }
 
         /// <summary>

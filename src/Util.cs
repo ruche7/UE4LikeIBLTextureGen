@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Media.Media3D;
+using SlimDX;
+using SlimDX.Direct3D10;
+using DXGI = SlimDX.DXGI;
 
 namespace UE4LikeIBLTextureGen
 {
@@ -73,6 +76,44 @@ namespace UE4LikeIBLTextureGen
                 throw new ArgumentException(
                     "The value of `" + paramName + "` is not a power of 2.",
                     paramName);
+            }
+        }
+
+        /// <summary>
+        /// ピクセル配列からテクスチャを生成する。
+        /// </summary>
+        /// <param name="device">Direct3D10デバイス。</param>
+        /// <param name="width">横幅。</param>
+        /// <param name="height">横幅。</param>
+        /// <param name="format">フォーマット。</param>
+        /// <param name="pixels">ピクセル配列。</param>
+        /// <param name="bytesPerPixel">1ピクセルあたりのバイトサイズ。</param>
+        /// <returns>生成されたテクスチャ。</returns>
+        public static Texture2D MakeTexture(
+            Device device,
+            int width,
+            int height,
+            DXGI.Format format,
+            Array pixels,
+            int bytesPerPixel)
+        {
+            // テクスチャ情報作成
+            var desc =
+                new Texture2DDescription
+                {
+                    ArraySize = 1,
+                    Format = format,
+                    Width = width,
+                    Height = height,
+                    MipLevels = 1,
+                    SampleDescription = new DXGI.SampleDescription(1, 0),
+                };
+
+            // テクスチャ生成
+            using (var s = new DataStream(pixels, true, false))
+            {
+                var data = new DataRectangle(bytesPerPixel * width, s);
+                return new Texture2D(device, desc, data);
             }
         }
 
@@ -475,9 +516,18 @@ namespace UE4LikeIBLTextureGen
 
             // 視線ベクトルを作成
             var eye = EquirectangularUVToEye(u, v);
+            eye.Normalize();
 
             // 視線ベクトルからキューブ展開図のUV値を求める
-            return EyeToCubeUV(eye.X, eye.Z);
+            var uv = EyeToCubeUV(eye.X, eye.Z);
+
+            // 視線ベクトルの Y 値が負数ならば V 値を反転させる
+            if (eye.Y < 0)
+            {
+                uv.Y = 1 - uv.Y;
+            }
+
+            return uv;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace UE4LikeIBLTextureGen
         /// <param name="args">プログラム引数。</param>
         static int Main(string[] args)
         {
-            int cubeLutSize = 512;
+            int[] cubeLutWidthes = { 512, 1024 };
             int equirectLutSize = 256;
             int brdfLutSize = 256;
             int hammersleySampleCount = 1024;
@@ -22,19 +22,26 @@ namespace UE4LikeIBLTextureGen
             // Direct3D10デバイス作成
             using (var device = new Device(DeviceCreationFlags.None))
             {
-                // 単位視線ベクトルからキューブマップ展開図のUV値へ変換するための
-                // テクスチャ保存
+                // Equirectangular projection マッピングのUV値からキューブマップ展開図の
+                // UV値へ変換するためのテクスチャ保存
                 Console.WriteLine(
-                    "Making the texture for converting from the unit vector of eye " +
+                    "Making the texture for converting " +
+                    "from UV value of Equirectangular projection mapping " +
                     "to UV value of cube mapping ...");
-                using (
-                    var tex =
-                        CubeLookUpTextureMaker.MakeEyeToMapUV(
-                            device,
-                            cubeLutSize,
-                            cubeLutSize))
+                foreach (var width in cubeLutWidthes)
                 {
-                    Texture2D.ToFile(tex, ImageFileFormat.Dds, "eye_to_cube.dds");
+                    using (
+                        var tex =
+                            EnvMapLookUpTextureMaker.MakeEquirectangularUVToCubeUV(
+                                device,
+                                width,
+                                width / 2))
+                    {
+                        Texture2D.ToFile(
+                            tex,
+                            ImageFileFormat.Dds,
+                            "equirect_to_cube_" + width + ".dds");
+                    }
                 }
 
                 // 単位視線ベクトルから Equirectangular projection マッピングのUV値へ
@@ -44,7 +51,7 @@ namespace UE4LikeIBLTextureGen
                     "to UV value of Equirectangular projection mapping ...");
                 using (
                     var tex =
-                        EquirectangularLookUpTextureMaker.MakeEyeToMapUV(
+                        EnvMapLookUpTextureMaker.MakeEyeToEquirectangularUV(
                             device,
                             equirectLutSize,
                             equirectLutSize))
